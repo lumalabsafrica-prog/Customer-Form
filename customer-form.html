@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Share your details</title>
+<style>
+:root{
+  box-sizing:border-box;
+  --bg:#f3f6f1; --card:#ffffff; --ink:#16241b; --muted:#56655b; --line:#cfd9d0;
+  --accent:#1f7a4d; --accent-ink:#ffffff; --notice:#e3f1e8; --err:#b3261e;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1812; --card:#17231b; --ink:#e8f1ea; --muted:#9fb1a5; --line:#2c3e32;
+    --accent:#3fbf80; --accent-ink:#06150d; --notice:#1b3226; --err:#ff8a80;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1812; --card:#17231b; --ink:#e8f1ea; --muted:#9fb1a5; --line:#2c3e32;
+  --accent:#3fbf80; --accent-ink:#06150d; --notice:#1b3226; --err:#ff8a80;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,"Times New Roman",serif}
+main{max-width:30rem;margin:0 auto;padding:1.5rem 1.1rem 2.5rem}
+h1{font-size:1.75rem;line-height:1.2;margin:.5rem 0 .4rem;letter-spacing:-.01em}
+.lead{color:var(--muted);margin:0 0 1.2rem}
+.notice{background:var(--notice);border-left:4px solid var(--accent);padding:.8rem 1rem;border-radius:6px;margin:0 0 1.4rem}
+.notice strong{display:block;margin-bottom:.2rem}
+.notice p{margin:0;font-size:.95rem}
+form{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1.2rem}
+label{display:block;font:600 .95rem system-ui,sans-serif;margin:0 0 .3rem}
+input[type=text],input[type=tel],input[type=email]{
+  width:100%;font:1rem system-ui,sans-serif;padding:.75rem .8rem;border:1px solid var(--line);
+  border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:1rem}
+input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.consent{display:flex;gap:.6rem;align-items:flex-start;margin:.2rem 0 1.1rem;font:.9rem/1.4 system-ui,sans-serif;color:var(--muted)}
+.consent input{margin-top:.2rem;width:1.1rem;height:1.1rem;flex:none}
+.actions{display:grid;gap:.6rem}
+button{font:600 1rem system-ui,sans-serif;padding:.85rem 1rem;border-radius:8px;border:2px solid var(--accent);cursor:pointer}
+.primary{background:var(--accent);color:var(--accent-ink)}
+.secondary{background:transparent;color:var(--accent)}
+.err{color:var(--err);font:.9rem system-ui,sans-serif;min-height:1.3rem;margin:.2rem 0 .6rem}
+.fine{font:.82rem/1.4 system-ui,sans-serif;color:var(--muted);margin:1rem 0 0}
+</style>
+</head>
+<body>
+<main>
+  <h1>Share your details</h1>
+  <p class="lead">Fill this in and the seller will get back to you.</p>
+
+  <div class="notice">
+    <strong>We don’t keep your data online.</strong>
+    <p>This page stores nothing. Your details go straight to the seller in a WhatsApp message or an email that you send yourself.</p>
+  </div>
+
+  <form id="f" novalidate>
+    <label for="name">Full name</label>
+    <input id="name" type="text" autocomplete="name" placeholder="Jane Wanjiru">
+
+    <label for="phone">Phone number</label>
+    <input id="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="0712 345 678">
+
+    <label for="email">Email address</label>
+    <input id="email" type="email" autocomplete="email" inputmode="email" placeholder="jane@example.com">
+
+    <div class="consent">
+      <input id="ok" type="checkbox">
+      <label for="ok" style="font-weight:400;margin:0">I agree to send these details to the seller.</label>
+    </div>
+
+    <div class="err" id="err" role="alert"></div>
+
+    <div class="actions">
+      <button type="button" class="primary" id="wa">Send on WhatsApp</button>
+      <button type="button" class="secondary" id="mail">Send by email</button>
+    </div>
+  </form>
+
+  <p class="fine">WhatsApp or your email app opens with your message ready. Nothing is sent until you tap Send there. WhatsApp and email providers carry the message, as they do for any message.</p>
+</main>
+
+<script>
+// Seller setup: set these two values.
+// WhatsApp number: country code + number, digits only (Kenya example: 254712345678).
+var SELLER_WHATSAPP = "254768819418";
+var SELLER_EMAIL = "seller@example.com";
+
+var $ = function(id){ return document.getElementById(id); };
+
+function read(){
+  return {
+    name: $("name").value.trim(),
+    phone: $("phone").value.trim(),
+    email: $("email").value.trim(),
+    ok: $("ok").checked
+  };
+}
+
+function check(d){
+  if(!d.name) return "Enter your full name.";
+  if(d.phone.replace(/\D/g,"").length < 9) return "Enter a valid phone number.";
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) return "Enter a valid email address.";
+  if(!d.ok) return "Tick the box to agree to send your details.";
+  return "";
+}
+
+function body(d){
+  return "Hello, here are my details:\n\nName: " + d.name +
+         "\nPhone: " + d.phone + "\nEmail: " + d.email;
+}
+
+function go(kind){
+  var d = read(), msg = check(d);
+  $("err").textContent = msg;
+  if(msg) return;
+  var text = encodeURIComponent(body(d));
+  if(kind === "wa"){
+    window.location.href = "https://wa.me/" + SELLER_WHATSAPP + "?text=" + text;
+  } else {
+    window.location.href = "mailto:" + SELLER_EMAIL +
+      "?subject=" + encodeURIComponent("New customer details") + "&body=" + text;
+  }
+}
+
+$("wa").addEventListener("click", function(){ go("wa"); });
+$("mail").addEventListener("click", function(){ go("mail"); });
+</script>
+</body>
+</html>
